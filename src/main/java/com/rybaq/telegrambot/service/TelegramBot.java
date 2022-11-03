@@ -98,6 +98,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 editMessageText.setMessageId(messageId);
                 editMessageText.setChatId(chatId);
                 editMessageText.setText(textToSend);
+                ButtonUtil.addButtonSkipAndDescription(editMessageText);
 
                 try {
                     execute(editMessageText);

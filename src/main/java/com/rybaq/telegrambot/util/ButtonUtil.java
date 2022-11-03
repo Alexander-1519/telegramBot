@@ -2,6 +2,7 @@ package com.rybaq.telegrambot.util;
 
 import com.rybaq.telegrambot.constant.Button;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -11,6 +12,14 @@ import java.util.List;
 public class ButtonUtil {
 
     public static void addButtonSkipAndDescription(SendMessage message) {
+        message.setReplyMarkup(getMarkup());
+    }
+
+    public static void addButtonSkipAndDescription(EditMessageText message) {
+        message.setReplyMarkup(getMarkup());
+    }
+
+    private static InlineKeyboardMarkup getMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
 
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -32,6 +41,7 @@ public class ButtonUtil {
 
         markup.setKeyboard(rows);
 
-        message.setReplyMarkup(markup);
+        return markup;
     }
+
 }
