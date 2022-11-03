@@ -33,7 +33,7 @@ public class QuestionService {
     }
 
     public Question getRandomQuestionByCategory(QuestionCategory category) {
-        if (questions.isEmpty()) {
+        if (questions.isEmpty() || !questions.get(0).getCategory().equals(category)) {
             questions = questionRepository.findByCategory(category);
         }
         int size = questions.size();
