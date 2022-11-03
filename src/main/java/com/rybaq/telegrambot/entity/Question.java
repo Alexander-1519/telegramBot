@@ -14,6 +14,9 @@ public class Question {
 
     private String answer;
 
+    @Enumerated(EnumType.STRING)
+    private QuestionCategory category;
+
     public Long getId() {
         return id;
     }
@@ -36,5 +39,13 @@ public class Question {
 
     public void setAnswer(String answer) {
         this.answer = answer;
+    }
+
+    public QuestionCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(QuestionCategory category) {
+        this.category = category;
     }
 }
