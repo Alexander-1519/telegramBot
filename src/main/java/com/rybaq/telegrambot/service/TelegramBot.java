@@ -51,12 +51,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     @PostConstruct
     protected void init() {
         //инициализируйте конфигурацию здесь
-        try {
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(this);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+//            botsApi.registerBot(this);
+//        } catch (TelegramApiException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
