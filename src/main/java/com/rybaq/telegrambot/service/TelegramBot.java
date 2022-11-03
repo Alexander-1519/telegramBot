@@ -3,6 +3,7 @@ package com.rybaq.telegrambot.service;
 import com.rybaq.telegrambot.config.BotConfig;
 import com.rybaq.telegrambot.constant.Button;
 import com.rybaq.telegrambot.entity.Question;
+import com.rybaq.telegrambot.util.ButtonUtil;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -215,28 +216,30 @@ public class TelegramBot extends TelegramLongPollingBot {
         message.setChatId(chatId);
         message.setText(currentQuestion.getName());
 
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+//        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+//
+//        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+//
+//        List<InlineKeyboardButton> row = new ArrayList<>();
+//
+//        InlineKeyboardButton skipButton = new InlineKeyboardButton();
+//        skipButton.setText("skip");
+//        skipButton.setCallbackData(Button.SKIP.name());
+//
+//        InlineKeyboardButton descriptionButton = new InlineKeyboardButton();
+//        descriptionButton.setText("description");
+//        descriptionButton.setCallbackData(Button.DESCRIPTION.name());
+//
+//        row.add(skipButton);
+//        row.add(descriptionButton);
+//
+//        rows.add(row);
+//
+//        markup.setKeyboard(rows);
+//
+//        message.setReplyMarkup(markup);
 
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        List<InlineKeyboardButton> row = new ArrayList<>();
-
-        InlineKeyboardButton skipButton = new InlineKeyboardButton();
-        skipButton.setText("skip");
-        skipButton.setCallbackData(Button.SKIP.name());
-
-        InlineKeyboardButton descriptionButton = new InlineKeyboardButton();
-        descriptionButton.setText("description");
-        descriptionButton.setCallbackData(Button.DESCRIPTION.name());
-
-        row.add(skipButton);
-        row.add(descriptionButton);
-
-        rows.add(row);
-
-        markup.setKeyboard(rows);
-
-        message.setReplyMarkup(markup);
+        ButtonUtil.addButtonSkipAndDescription(message);
 
         try {
             execute(message);
