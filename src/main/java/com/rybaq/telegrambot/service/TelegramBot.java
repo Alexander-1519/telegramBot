@@ -4,8 +4,11 @@ import com.rybaq.telegrambot.config.BotConfig;
 import com.rybaq.telegrambot.constant.Button;
 import com.rybaq.telegrambot.entity.Question;
 import com.rybaq.telegrambot.entity.QuestionCategory;
+import com.rybaq.telegrambot.entity.Quiz;
+import com.rybaq.telegrambot.entity.QuizCategory;
 import com.rybaq.telegrambot.util.ButtonUtil;
 import com.rybaq.telegrambot.util.QuestionCategoryUtil;
+import com.rybaq.telegrambot.util.QuizCategoryUtil;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -18,21 +21,30 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
     private final BotConfig botConfig;
     private final QuestionService questionService;
+    private final QuizService quizService;
     private Question currentQuestion = null;
     private QuestionCategory currentCategory = null;
+    private QuizCategory currentQuizCategory = null;
+    private Quiz currentQuizQuestion = null;
+    private int quizSize = 0;
+    private int currentQuestionNumber = 1;
+    private List<Integer> wrongAnswers = new ArrayList<>();
 
-    public TelegramBot(BotConfig botConfig, QuestionService questionService) {
+    public TelegramBot(BotConfig botConfig, QuestionService questionService, QuizService quizService) {
         this.botConfig = botConfig;
         this.questionService = questionService;
+        this.quizService = quizService;
         List<BotCommand> commandsList = new ArrayList<>();
         commandsList.add(new BotCommand("/start", "Start activity bot."));
-        commandsList.add(new BotCommand("/categories", "Choose any category."));
+        commandsList.add(new BotCommand("/questions", "Choose any category in questions."));
+        commandsList.add(new BotCommand("/quizzes", "Choose any category in quiz."));
         try {
             this.execute(new SetMyCommands(commandsList, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -62,7 +74,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (data.equals(Button.DESCRIPTION.name())) {
                 String answer = currentQuestion.getAnswer();
                 String textToSend = currentQuestion.getName() + "\n\n" + answer;
-                if(!update.getCallbackQuery().getMessage().getText().equals(textToSend)) {
+                if (!update.getCallbackQuery().getMessage().getText().equals(textToSend)) {
                     EditMessageText editMessageText = new EditMessageText();
                     editMessageText.setMessageId(messageId);
                     editMessageText.setChatId(chatId);
@@ -75,9 +87,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                         e.printStackTrace();
                     }
                 }
-            } else if (QuestionCategoryUtil.categories.contains(QuestionCategory.valueOf(data))) {
+            } else if (data.contains("QUESTION_") && QuestionCategoryUtil.categories.contains(QuestionCategory.valueOf(data))) {
                 QuestionCategory category = QuestionCategory.valueOf(data);
                 getRandomQuestionByCategory(chatId, category);
+            } else if (data.contains("QUIZ_") && QuizCategoryUtil.categories.contains(QuizCategory.valueOf(data))) {
+                QuizCategory category = QuizCategory.valueOf(data);
+                getRandomQuizQuestionByCategory(chatId, category);
+            } else if (data.equals("false") || data.equals("true")) {
+                boolean isAnswer = Boolean.parseBoolean(data);
+                if (!isAnswer) {
+                    wrongAnswers.add(currentQuestionNumber - 1);
+                }
+
+                if (currentQuestionNumber - 1 != quizSize) {
+                    getRandomQuizQuestionByCategory(chatId, currentQuizCategory);
+                } else {
+                    String wrongAnswer = "Wrong answers on questions: ";
+                    String collect = wrongAnswers.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining(","));
+                    sendMessage(chatId, wrongAnswer + collect);
+                }
             }
         } else {
 
@@ -88,8 +118,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     onStartMessage(chatId, update.getMessage().getChat().getUserName());
                     break;
                 }
-                case "/categories": {
+                case "/questions": {
                     getCategories(chatId);
+                    break;
+                }
+                case "/quizzes": {
+                    getQuizCategories(chatId);
                     break;
                 }
                 default: {
@@ -123,57 +157,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-//    private void register(long chatId) {
-//        SendMessage message = new SendMessage();
-//        message.setChatId(chatId);
-//        message.setText("Do you really want to register?");
-//
-//        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-//
-//        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-//
-//        List<InlineKeyboardButton> row = new ArrayList<>();
-//
-//        InlineKeyboardButton yesButton = new InlineKeyboardButton();
-//        yesButton.setText("Yes");
-//        yesButton.setCallbackData("YES BUTTON");
-//
-//        InlineKeyboardButton noButton = new InlineKeyboardButton();
-//        noButton.setText("No");
-//        noButton.setCallbackData("NO BUTTON");
-//
-//        row.add(yesButton);
-//        row.add(noButton);
-//
-//        rows.add(row);
-//
-//        markup.setKeyboard(rows);
-//
-//        message.setReplyMarkup(markup);
-//
-//        try {
-//            execute(message);
-//        } catch (TelegramApiException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    private void getRandomQuestion(Long chatId) {
-        currentQuestion = questionService.getRandomQuestion();
-
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText(currentQuestion.getName());
-
-        ButtonUtil.addButtonSkipAndDescription(message);
-
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void getRandomQuestionByCategory(Long chatId, QuestionCategory category) {
         currentQuestion = questionService.getRandomQuestionByCategory(category);
         currentCategory = category;
@@ -197,6 +180,38 @@ public class TelegramBot extends TelegramLongPollingBot {
         message.setText("Choose question's category");
 
         ButtonUtil.addButtonCategories(message);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getQuizCategories(Long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Choose question's category");
+
+        ButtonUtil.addButtonQuizCategories(message);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getRandomQuizQuestionByCategory(Long chatId, QuizCategory category) {
+        currentQuizQuestion = quizService.getRandomQuiz(category);
+        currentQuizCategory = category;
+        quizSize = quizService.getSizeOfQuiz();
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(currentQuestionNumber++ + ". " + currentQuizQuestion.getQuestion());
+
+        ButtonUtil.addButtonsWithAnswers(message, currentQuizQuestion.getVariants());
 
         try {
             execute(message);

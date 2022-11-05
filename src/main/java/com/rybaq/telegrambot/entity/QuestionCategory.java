@@ -2,5 +2,5 @@ package com.rybaq.telegrambot.entity;
 
 public enum QuestionCategory {
 
-    BASIC, OOP, COLLECTIONS, EXCEPTIONS
+    QUESTION_BASIC, QUESTION_OOP, QUESTION_COLLECTIONS, QUESTION_EXCEPTIONS
 }

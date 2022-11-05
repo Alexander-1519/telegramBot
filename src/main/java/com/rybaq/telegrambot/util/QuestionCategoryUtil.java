@@ -6,6 +6,5 @@ import java.util.List;
 
 public class QuestionCategoryUtil {
 
-    public static final List<QuestionCategory> categories = List.of(QuestionCategory.BASIC, QuestionCategory.OOP,
-            QuestionCategory.COLLECTIONS,QuestionCategory.EXCEPTIONS);
+    public static final List<QuestionCategory> categories = List.of(QuestionCategory.values());
 }
