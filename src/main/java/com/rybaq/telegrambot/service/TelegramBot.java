@@ -95,21 +95,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 currentQuestionNumber = 1;
                 getRandomQuizQuestionByCategory(chatId, category);
             } else if (data.equals("false") || data.equals("true")) {
-                boolean isAnswer = Boolean.parseBoolean(data);
-                if (!isAnswer) {
-                    wrongAnswers.add(currentQuestionNumber - 1);
-                }
-
-                if (currentQuestionNumber - 1 != quizSize) {
-                    getRandomQuizQuestionByCategory(chatId, currentQuizCategory);
-                } else {
-                    String wrongAnswer = "Wrong answers on questions: ";
-                    String collect = wrongAnswers.stream()
-                            .map(Object::toString)
-                            .collect(Collectors.joining(","));
-                    wrongAnswers.clear();
-                    sendMessage(chatId, wrongAnswer + collect);
-                }
+                solveQuizAnswer(chatId, data, update);
             }
         } else {
 
@@ -219,6 +205,40 @@ public class TelegramBot extends TelegramLongPollingBot {
             execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void solveQuizAnswer(Long chatId, String data, Update update) {
+        boolean isAnswer = Boolean.parseBoolean(data);
+        if (!isAnswer) {
+            wrongAnswers.add(currentQuestionNumber - 1);
+        }
+
+        EditMessageText messageText = new EditMessageText();
+        messageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        messageText.setChatId(update.getCallbackQuery().getMessage().getChatId());
+        messageText.setText(currentQuestionNumber - 1 + ". " + currentQuizQuestion.getQuestion());
+        ButtonUtil.addButtonsWithAnswersCompleted(messageText, currentQuizQuestion.getVariants());
+
+        try {
+            execute(messageText);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+        if (currentQuestionNumber - 1 != quizSize) {
+            getRandomQuizQuestionByCategory(chatId, currentQuizCategory);
+        } else {
+            if(wrongAnswers.isEmpty()){
+                sendMessage(chatId, "There are no wrong answers. Great job, null!");
+            }else {
+                String wrongAnswer = "Wrong answers on questions: ";
+                String collect = wrongAnswers.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
+                wrongAnswers.clear();
+                sendMessage(chatId, wrongAnswer + collect);
+            }
         }
     }
 

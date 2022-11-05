@@ -53,6 +53,27 @@ public class ButtonUtil {
         message.setReplyMarkup(markup);
     }
 
+    public static void addButtonsWithAnswersCompleted(EditMessageText message, List<QuizVariant> variants) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        for (QuizVariant variant : variants) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText("(" + variant.isAnswer() + ")\t\t" + variant.getAnswer());
+            button.setCallbackData(String.valueOf(variant.isAnswer()));
+
+            row.add(button);
+            rows.add(row);
+        }
+
+        markup.setKeyboard(rows);
+
+        message.setReplyMarkup(markup);
+    }
+
 
     private static InlineKeyboardMarkup getMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
