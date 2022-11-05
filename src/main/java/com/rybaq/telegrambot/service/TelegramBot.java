@@ -106,6 +106,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     String collect = wrongAnswers.stream()
                             .map(Object::toString)
                             .collect(Collectors.joining(","));
+                    wrongAnswers.clear();
                     sendMessage(chatId, wrongAnswer + collect);
                 }
             }
@@ -206,6 +207,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         currentQuizQuestion = quizService.getRandomQuiz(category);
         currentQuizCategory = category;
         quizSize = quizService.getSizeOfQuiz();
+        currentQuestionNumber = 1;
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
