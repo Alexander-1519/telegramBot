@@ -92,6 +92,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 getRandomQuestionByCategory(chatId, category);
             } else if (data.contains("QUIZ_") && QuizCategoryUtil.categories.contains(QuizCategory.valueOf(data))) {
                 QuizCategory category = QuizCategory.valueOf(data);
+                currentQuestionNumber = 1;
                 getRandomQuizQuestionByCategory(chatId, category);
             } else if (data.equals("false") || data.equals("true")) {
                 boolean isAnswer = Boolean.parseBoolean(data);
@@ -207,7 +208,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         currentQuizQuestion = quizService.getRandomQuiz(category);
         currentQuizCategory = category;
         quizSize = quizService.getSizeOfQuiz();
-        currentQuestionNumber = 1;
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
