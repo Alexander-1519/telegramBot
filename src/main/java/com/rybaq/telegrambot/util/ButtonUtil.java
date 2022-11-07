@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ButtonUtil {
 
@@ -62,7 +63,8 @@ public class ButtonUtil {
             List<InlineKeyboardButton> row = new ArrayList<>();
 
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("(" + variant.isAnswer() + ")\t\t" + variant.getAnswer());
+            button.setText("(" + String.valueOf(variant.isAnswer()).toUpperCase(Locale.ROOT) + ")\t\t\t"
+                    + variant.getAnswer());
             button.setCallbackData(String.valueOf(variant.isAnswer()));
 
             row.add(button);

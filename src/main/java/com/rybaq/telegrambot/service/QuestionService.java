@@ -45,4 +45,8 @@ public class QuestionService {
         questions.remove(question);
         return question;
     }
+
+    public Question findByName(String name){
+        return questionRepository.findByName(name);
+    }
 }

@@ -2,23 +2,24 @@ package com.rybaq.telegrambot.service;
 
 import com.rybaq.telegrambot.config.BotConfig;
 import com.rybaq.telegrambot.constant.Button;
-import com.rybaq.telegrambot.entity.Question;
-import com.rybaq.telegrambot.entity.QuestionCategory;
-import com.rybaq.telegrambot.entity.Quiz;
-import com.rybaq.telegrambot.entity.QuizCategory;
+import com.rybaq.telegrambot.entity.*;
 import com.rybaq.telegrambot.util.ButtonUtil;
 import com.rybaq.telegrambot.util.QuestionCategoryUtil;
 import com.rybaq.telegrambot.util.QuizCategoryUtil;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,18 +30,24 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig botConfig;
     private final QuestionService questionService;
     private final QuizService quizService;
+    private final FactService factService;
+    private final UserService userService;
+
     private Question currentQuestion = null;
     private QuestionCategory currentCategory = null;
     private QuizCategory currentQuizCategory = null;
     private Quiz currentQuizQuestion = null;
     private int quizSize = 0;
     private int currentQuestionNumber = 1;
-    private List<Integer> wrongAnswers = new ArrayList<>();
+    private final List<Integer> wrongAnswers = new ArrayList<>();
 
-    public TelegramBot(BotConfig botConfig, QuestionService questionService, QuizService quizService) {
+    public TelegramBot(BotConfig botConfig, QuestionService questionService, QuizService quizService,
+                       FactService factService, UserService userService) {
         this.botConfig = botConfig;
         this.questionService = questionService;
         this.quizService = quizService;
+        this.factService = factService;
+        this.userService = userService;
         List<BotCommand> commandsList = new ArrayList<>();
         commandsList.add(new BotCommand("/start", "Start activity bot."));
         commandsList.add(new BotCommand("/questions", "Choose any category in questions."));
@@ -72,8 +79,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (data.equals(Button.SKIP.name())) {
                 getRandomQuestionByCategory(chatId, currentCategory);
             } else if (data.equals(Button.DESCRIPTION.name())) {
-                String answer = currentQuestion.getAnswer();
-                String textToSend = currentQuestion.getName() + "\n\n" + answer;
+                String questionName = update.getCallbackQuery().getMessage().getText();
+                Question question = questionService.findByName(questionName);
+
+                String answer = question.getAnswer();
+                String textToSend = question.getName() + "\n\n" + answer;
                 if (!update.getCallbackQuery().getMessage().getText().equals(textToSend)) {
                     EditMessageText editMessageText = new EditMessageText();
                     editMessageText.setMessageId(messageId);
@@ -103,7 +113,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             Long chatId = update.getMessage().getChatId();
             switch (text) {
                 case "/start": {
-                    onStartMessage(chatId, update.getMessage().getChat().getUserName());
+                    onStartMessage(chatId,
+                            update.getMessage().getChat().getUserName(),
+                            update.getMessage().getChatId());
                     break;
                 }
                 case "/questions": {
@@ -121,7 +133,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void onStartMessage(Long chatId, String username) {
+    private void onStartMessage(Long chatId, String username, Long userId) {
+        User user = new User();
+        user.setUserId(userId);
+        userService.saveUser(user);
+
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText("Hi, " + username + ", nice to meet you!");
@@ -231,6 +247,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else {
             if(wrongAnswers.isEmpty()){
                 sendMessage(chatId, "There are no wrong answers. Great job, null!");
+                sendPhoto(chatId, "src/main/resources/photo/img_2.png");
             }else {
                 String wrongAnswer = "Wrong answers on questions: ";
                 String collect = wrongAnswers.stream()
@@ -238,8 +255,60 @@ public class TelegramBot extends TelegramLongPollingBot {
                         .collect(Collectors.joining(","));
                 wrongAnswers.clear();
                 sendMessage(chatId, wrongAnswer + collect);
+                sendPhoto(chatId, "src/main/resources/photo/img_1.png");
             }
         }
     }
+
+    private void sendPhoto(Long chatId, String photoPath) {
+        SendPhoto photo = new SendPhoto();
+        photo.setChatId(chatId);
+        photo.setPhoto(new InputFile().setMedia(new File(photoPath)));
+
+        try {
+            execute(photo);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Scheduled(cron = "* * 7 * * *")
+    public void getRandomFact() {
+        Fact randomFact = factService.getRandomFact();
+
+        List<User> users = userService.getAllUsers();
+
+        for(User user: users) {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setText(randomFact.getName());
+            sendMessage.setChatId(user.getUserId());
+
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Scheduled(cron = "* * 8,20 * * *")
+    public void appScheduler() {
+        List<User> users = userService.getAllUsers();
+
+        for(User user: users) {
+            SendMessage message = new SendMessage();
+            message.setText("Эй, бичуган, а ты сделал домашку? Преподу не нравится, когда не делают домашку!" +
+                    " Пока ты сидишь и бездельничаешь, кто-то её делает и занимает твою позицию разработчика.");
+            message.setChatId(user.getUserId());
+
+            try {
+                execute(message);
+                sendPhoto(user.getUserId(), "src/main/resources/photo/img.png");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
 }

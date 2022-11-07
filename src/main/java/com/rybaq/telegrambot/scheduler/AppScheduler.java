@@ -5,9 +5,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AppScheduler {
-//
-//    @Scheduled(cron = "0 0/5 * * * ?")
+
+//    @Scheduled(cron = "* * 8,20 * * *")
 //    public void appScheduler() {
-//        System.out.println("5 minutes late...");
+//
 //    }
 }

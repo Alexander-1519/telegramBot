@@ -1,13 +1,13 @@
 CREATE TABLE Questions(
     id                  BIGSERIAL PRIMARY KEY,
     name                VARCHAR(500) NOT NULL,
-    answer              VARCHAR(2500) NOT NULL,
+    answer              VARCHAR(5000) NOT NULL,
     category            VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE Quizes(
     id                  BIGSERIAL PRIMARY KEY,
-    question            VARCHAR(2500) NOT NULL,
+    question            VARCHAR(5000) NOT NULL,
     category            VARCHAR(255) NOT NULL
 );
 
