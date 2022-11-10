@@ -272,7 +272,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    @Scheduled(cron = "* * 7 * * *")
+    @Scheduled(cron = "30 30 7 * * *")
     public void getRandomFact() {
         Fact randomFact = factService.getRandomFact();
 
@@ -291,7 +291,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    @Scheduled(cron = "* * 8,20 * * *")
+    @Scheduled(cron = "30 30 8,20 * * *")
     public void appScheduler() {
         List<User> users = userService.getAllUsers();
 
